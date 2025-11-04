@@ -150,7 +150,8 @@ lint:
 ## lint-warn: Run golangci-lint but don't fail on warnings (for CI during technical debt cleanup)
 lint-warn:
 	@echo "Running golangci-lint (warning mode - won't fail CI)..."
-	$(GOLANGCI_LINT) run --config .golangci.yml ./... || echo "⚠️  Lint warnings found (tracked in GitHub Issues)"
+	$(GOLANGCI_LINT) run --config .golangci.yml ./... || true
+	@echo "⚠️  Lint warnings found (tracked in GitHub Issues)"
 
 ## semgrep: Run Semgrep security and quality checks (informational only)
 semgrep:
