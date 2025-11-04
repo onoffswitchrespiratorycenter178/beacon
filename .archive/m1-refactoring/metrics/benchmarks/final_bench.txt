@@ -1,0 +1,50 @@
+PASS
+ok  	github.com/joshuafuller/beacon/internal/errors	0.007s
+PASS
+ok  	github.com/joshuafuller/beacon/internal/message	0.020s
+PASS
+ok  	github.com/joshuafuller/beacon/internal/network	0.045s
+PASS
+ok  	github.com/joshuafuller/beacon/internal/protocol	0.014s
+goos: linux
+goarch: amd64
+pkg: github.com/joshuafuller/beacon/internal/transport
+cpu: Intel(R) Xeon(R) CPU E5-2667 v2 @ 3.30GHz
+BenchmarkUDPv4Transport_ReceivePath-8   	 3887464	       308.6 ns/op	      48 B/op	       1 allocs/op
+BenchmarkUDPv4Transport_ReceivePath-8   	12280936	       246.7 ns/op	      48 B/op	       1 allocs/op
+BenchmarkUDPv4Transport_ReceivePath-8   	 6435621	       174.0 ns/op	      48 B/op	       1 allocs/op
+BenchmarkUDPv4Transport_ReceivePath-8   	 9590724	       116.4 ns/op	      48 B/op	       1 allocs/op
+BenchmarkUDPv4Transport_ReceivePath-8   	11005144	       181.3 ns/op	      48 B/op	       1 allocs/op
+PASS
+ok  	github.com/joshuafuller/beacon/internal/transport	9.490s
+goos: linux
+goarch: amd64
+pkg: github.com/joshuafuller/beacon/querier
+cpu: Intel(R) Xeon(R) CPU E5-2667 v2 @ 3.30GHz
+BenchmarkQuery-8           	 5274387	       191.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQuery-8           	 7710901	       131.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQuery-8           	 5376684	       188.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQuery-8           	 6037299	       201.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQuery-8           	15843526	       101.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkNew-8             	    8256	    573296 ns/op	    3502 B/op	      22 allocs/op
+BenchmarkNew-8             	     805	   1307938 ns/op	    3521 B/op	      22 allocs/op
+BenchmarkNew-8             	    2184	    495218 ns/op	    3504 B/op	      22 allocs/op
+BenchmarkNew-8             	    2466	    418594 ns/op	    3496 B/op	      22 allocs/op
+BenchmarkNew-8             	    7119	    253089 ns/op	    3497 B/op	      22 allocs/op
+BenchmarkQueryParallel-8   	 1476913	       682.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryParallel-8   	 1705579	       591.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryParallel-8   	 1489386	       677.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryParallel-8   	 3276886	       644.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkQueryParallel-8   	 1474718	       714.6 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/joshuafuller/beacon/querier	44.940s
+PASS
+ok  	github.com/joshuafuller/beacon/tests/contract	25.590s
+PASS
+ok  	github.com/joshuafuller/beacon/tests/fuzz	0.038s
+--- FAIL: TestQuery_RealNetwork_Timeout (1.06s)
+    query_test.go:364: Query() received 0 records in 1.000872788s
+    query_test.go:370: ✗ SC-002: Query took 1.000872788s, expected ≤1 second
+--- FAIL: TestQuery_RealNetwork_Timeout (1.10s)
+    query_test.go:364: Query() received 0 records in 1.000757592s
+    query_test.go:370: ✗ SC-002: Query took 1.000757592s, expected ≤1 second

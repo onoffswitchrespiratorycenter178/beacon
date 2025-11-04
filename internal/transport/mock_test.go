@@ -1,0 +1,66 @@
+package transport_test
+
+import (
+	"context"
+	"net"
+	"testing"
+
+	"github.com/joshuafuller/beacon/internal/transport"
+)
+
+// TDD - RED Phase: Tests for MockTransport
+// These tests are written FIRST, before implementation exists
+// Expected: COMPILATION ERRORS (MockTransport doesn't exist yet)
+
+// T012: Contract test - MockTransport implements Transport interface
+// NOTE: This test will FAIL to compile until MockTransport is defined in T025
+func TestMockTransport_ImplementsTransportInterface(_ *testing.T) {
+	// This will fail to compile until MockTransport exists
+	var _ transport.Transport = (*transport.MockTransport)(nil)
+}
+
+// T017: Unit test - MockTransport.Send() records calls for verification
+// NOTE: This test will FAIL to compile until MockTransport exists (T025)
+func TestMockTransport_Send_RecordsCalls(t *testing.T) {
+	mock := transport.NewMockTransport()
+	defer func() { _ = mock.Close() }()
+
+	ctx := context.Background()
+	packet1 := []byte{0x01, 0x02}
+	packet2 := []byte{0x03, 0x04}
+	addr1 := &net.UDPAddr{IP: net.IPv4(224, 0, 0, 251), Port: 5353}
+	addr2 := &net.UDPAddr{IP: net.IPv4(224, 0, 0, 252), Port: 5353}
+
+	// Send two packets
+	err := mock.Send(ctx, packet1, addr1)
+	if err != nil {
+		t.Fatalf("Send(packet1) failed: %v", err)
+	}
+
+	err = mock.Send(ctx, packet2, addr2)
+	if err != nil {
+		t.Fatalf("Send(packet2) failed: %v", err)
+	}
+
+	// Verify calls were recorded
+	calls := mock.SendCalls()
+	if len(calls) != 2 {
+		t.Fatalf("Expected 2 Send() calls, got %d", len(calls))
+	}
+
+	// Verify first call
+	if string(calls[0].Packet) != string(packet1) {
+		t.Errorf("First call packet mismatch: got %v, want %v", calls[0].Packet, packet1)
+	}
+	if calls[0].Dest.String() != addr1.String() {
+		t.Errorf("First call addr mismatch: got %v, want %v", calls[0].Dest, addr1)
+	}
+
+	// Verify second call
+	if string(calls[1].Packet) != string(packet2) {
+		t.Errorf("Second call packet mismatch: got %v, want %v", calls[1].Packet, packet2)
+	}
+	if calls[1].Dest.String() != addr2.String() {
+		t.Errorf("Second call addr mismatch: got %v, want %v", calls[1].Dest, addr2)
+	}
+}

@@ -1,0 +1,879 @@
+# Semgrep Configuration for Beacon mDNS Library
+# Enforces Constitution principles and F-Spec requirements
+#
+# Constitution: .specify/memory/constitution.md
+# F-Specs: .specify/specs/F-*.md
+#
+# Run with: semgrep --config=.semgrep.yml .
+
+rules:
+  # ==================================================================================
+  # CONSTITUTION PRINCIPLE I: RFC Compliance
+  # ==================================================================================
+
+  - id: beacon-ttl-service-vs-hostname
+    patterns:
+      - pattern: |
+          TTL: $VALUE
+      - metavariable-comparison:
+          metavariable: $VALUE
+          comparison: $VALUE != 120 and $VALUE != 4500 and $VALUE != 0
+      - pattern-inside: |
+          &message.ResourceRecord{
+            ...
+          }
+    message: |
+      TTL must be 120s (service records), 4500s (hostname records), or 0 (goodbye).
+      RFC 6762 §10 - Constitution Principle I requires strict RFC compliance.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      constitution: Principle I (RFC Compliance)
+      rfc: RFC 6762 §10
+
+  # ==================================================================================
+  # CONSTITUTION PRINCIPLE IV: Error Handling
+  # ==================================================================================
+
+  - id: beacon-error-swallowing
+    patterns:
+      - pattern: $X, _ := $FUNC(...)
+    message: |
+      Error ignored with blank identifier '_'. Constitution Principle IV forbids
+      swallowing errors. MUST handle or propagate all errors.
+
+      Options:
+      1. Check error: if err != nil { return err }
+      2. Add comment explaining why error is impossible
+      3. Use explicit //nolint:errcheck if justified
+    languages: [go]
+    severity: WARNING
+    metadata:
+      constitution: Principle IV (Error Handling)
+      category: error-handling
+
+  - id: beacon-error-capitalization
+    patterns:
+      - pattern: |
+          fmt.Errorf("$MSG", ...)
+      - metavariable-regex:
+          metavariable: $MSG
+          regex: ^[A-Z][a-z]
+    message: |
+      Error messages should not be capitalized per Go conventions (ST1005).
+      Constitution Principle VIII (Excellence) requires Go best practices.
+    languages: [go]
+    severity: INFO
+    metadata:
+      constitution: Principle VIII (Excellence)
+      category: go-style
+
+  # NOTE: beacon-panic-in-library rule disabled - Go pattern limitations
+  # Manually check: grep -rn "panic(" --include="*.go" --exclude="*_test.go"
+
+  # ==================================================================================
+  # CONSTITUTION PRINCIPLE V: Dependencies
+  # ==================================================================================
+
+  - id: beacon-external-dependencies
+    patterns:
+      - pattern: import "$PKG"
+      - metavariable-regex:
+          metavariable: $PKG
+          regex: ^(?!(context|fmt|net|os|regexp|sync|time|testing|encoding|bytes|strconv|strings|errors|io|math|sort|runtime|unsafe|syscall|golang\.org/x/(sys|net)|github\.com/joshuafuller/beacon(/|$)|beacon/)).*$
+    message: |
+      External dependency detected. Constitution Principle V allows:
+      1. Standard library (preferred)
+      2. golang.org/x/sys/** (socket options) - must justify in F-specs
+      3. golang.org/x/net/** (multicast) - must justify in F-specs
+
+      Third-party libs require constitutional amendment.
+    languages: [go]
+    severity: ERROR
+    paths:
+      exclude:
+        - "**/examples/**"
+    metadata:
+      constitution: Principle V (Dependencies)
+      category: supply-chain
+
+  # ==================================================================================
+  # F-4: CONCURRENCY MODEL - Context Requirements
+  # ==================================================================================
+
+  # NOTE: beacon-context-missing-blocking rule disabled - Go pattern limitations
+  # Manual review required for functions using time.Sleep, select, channels without context
+
+  - id: beacon-context-not-checked-loop
+    patterns:
+      - pattern: |
+          for $COND {
+            ...
+            time.Sleep($DURATION)
+            ...
+          }
+      - pattern-not-inside: |
+          select {
+            case <-ctx.Done():
+              ...
+          }
+    message: |
+      Loop with Sleep() doesn't check context. F-4 requires select with ctx.Done().
+    languages: [go]
+    severity: WARNING
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      category: context-handling
+
+  # ==================================================================================
+  # F-4: CONCURRENCY MODEL - Mutex Safety
+  # ==================================================================================
+
+  - id: beacon-mutex-defer-unlock
+    patterns:
+      - pattern-either:
+          - pattern: $MU.Lock()
+          - pattern: $MU.RLock()
+      - pattern-not-inside: |
+          $MU.Lock()
+          defer $MU.Unlock()
+          ...
+      - pattern-not-inside: |
+          $MU.RLock()
+          defer $MU.RUnlock()
+          ...
+    message: |
+      Mutex locked without defer unlock. F-4 requires 'defer mu.Unlock()' immediately
+      after Lock() to prevent deadlocks on panic.
+
+      Fix: Add defer immediately after Lock():
+        mu.Lock()
+        defer mu.Unlock()
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      constitution: Principle IV (Error Handling)
+      category: concurrency
+
+  # ==================================================================================
+  # F-9: TRANSPORT LAYER - Resource Management
+  # ==================================================================================
+
+  - id: beacon-socket-close-check
+    patterns:
+      - pattern-either:
+          - pattern: $CONN, $ERR := net.Dial(...)
+          - pattern: $CONN, $ERR := net.DialTimeout(...)
+          - pattern: $CONN, $ERR := net.DialTCP(...)
+          - pattern: $CONN, $ERR := net.DialUDP(...)
+          - pattern: $CONN, $ERR := net.Listen(...)
+          - pattern: $CONN, $ERR := net.ListenTCP(...)
+          - pattern: $CONN, $ERR := net.ListenUDP(...)
+          - pattern: $CONN, $ERR := net.ListenMulticastUDP(...)
+          - pattern: $CONN, $ERR := net.ListenPacket(...)
+      - pattern-not-inside: |
+          $CONN, $ERR := net.$FUNC(...)
+          ...
+          defer $CONN.Close()
+    message: |
+      Network connection not closed. F-9 Transport Layer requires defer conn.Close().
+    languages: [go]
+    severity: WARNING
+    metadata:
+      fspec: F-9 (Transport Layer)
+      category: resource-leak
+
+  # ==================================================================================
+  # CONSTITUTION PRINCIPLE III: TDD - Test Quality
+  # ==================================================================================
+
+  # NOTE: beacon-test-missing-t-helper rule disabled - Go pattern limitations
+  # Manual review: Check test helper functions call t.Helper() before t.Fatal*()
+
+  # ==================================================================================
+  # CONSTITUTION PRINCIPLE VIII: Excellence - Go Best Practices
+  # ==================================================================================
+
+  # NOTE: beacon-empty-interface-usage rule disabled - Go pattern limitations
+  # Use grep: grep -rn "interface{}" --include="*.go" to find usages
+
+  # ==================================================================================
+  # F-4: CONCURRENCY MODEL - Timer and Resource Leaks (HIGH PRIORITY)
+  # ==================================================================================
+
+  - id: beacon-timer-leak
+    patterns:
+      - pattern: |
+          $TIMER := time.NewTimer($DURATION)
+      - pattern-not-inside: |
+          $TIMER := time.NewTimer($DURATION)
+          defer $TIMER.Stop()
+          ...
+      - pattern-not-inside: |
+          $TIMER := time.NewTimer($DURATION)
+          ...
+          $TIMER.Stop()
+    message: |
+      Timer created without Stop() call. F-4 REQ-F4-7 requires:
+        timer := time.NewTimer(delay)
+        defer timer.Stop()
+
+      Leaked timers consume memory and goroutines. CRITICAL for long-running services.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      requirement: REQ-F4-7
+      category: resource-leak
+
+  - id: beacon-ticker-leak
+    patterns:
+      - pattern: |
+          $TICKER := time.NewTicker($DURATION)
+      - pattern-not-inside: |
+          $TICKER := time.NewTicker($DURATION)
+          defer $TICKER.Stop()
+          ...
+      - pattern-not-inside: |
+          $TICKER := time.NewTicker($DURATION)
+          ...
+          $TICKER.Stop()
+    message: |
+      Ticker created without Stop() call. F-4 requires:
+        ticker := time.NewTicker(interval)
+        defer ticker.Stop()
+
+      Leaked tickers are permanent goroutine leaks.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      requirement: REQ-F4-7
+      category: resource-leak
+
+  - id: beacon-waitgroup-missing-done
+    patterns:
+      - pattern: |
+          $WG.Add($N)
+          go func() {
+            $...BODY
+          }()
+      - pattern-not: |
+          $WG.Add($N)
+          go func() {
+            defer $WG.Done()
+            $...BODY
+          }()
+    message: |
+      Goroutine launched after wg.Add() without defer wg.Done(). F-4 REQ-F4-1 requires:
+        wg.Add(1)
+        go func() {
+            defer wg.Done()  // MUST be first line
+            // work
+        }()
+
+      Missing Done() causes Wait() to hang forever.
+      Note: This rule only checks anonymous functions. Named function goroutines require manual review.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      requirement: REQ-F4-1
+      category: concurrency
+
+  - id: beacon-unbuffered-result-channel
+    patterns:
+      - pattern: |
+          $CH := make(chan $TYPE)
+          go func() {
+            ...
+            $CH <- $VALUE
+          }()
+      - pattern-not: |
+          $CH := make(chan $TYPE, $SIZE)
+          ...
+    message: |
+      Unbuffered channel used for goroutine result. F-4 recommends:
+        resultChan := make(chan Result, 1) // Buffered
+
+      If context cancelled before receive, goroutine blocks forever (leak).
+      Buffered channel (size 1) prevents leak.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      pattern: Request-Scoped Goroutines
+      category: concurrency
+
+  # ==================================================================================
+  # F-2: PACKAGE STRUCTURE - Layer Boundary Violations (HIGH PRIORITY)
+  # ==================================================================================
+
+  - id: beacon-internal-imports-public
+    patterns:
+      - pattern: import "$PKG"
+      - metavariable-regex:
+          metavariable: $PKG
+          regex: ^github\.com/joshuafuller/beacon/(querier|responder|service)
+    paths:
+      include:
+        - "**/internal/**/*.go"
+    message: |
+      Internal packages MUST NOT import public packages (F-2 RULE-2).
+      This creates circular dependencies and violates layer boundaries.
+
+      Allowed: internal/ -> internal/, public/ -> internal/
+      Forbidden: internal/ -> public/
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-2 (Package Structure)
+      rule: RULE-2
+      category: architecture
+
+  - id: beacon-test-imports-internal
+    patterns:
+      - pattern: import "$PKG"
+      - metavariable-regex:
+          metavariable: $PKG
+          regex: ^github\.com/joshuafuller/beacon/internal/
+    paths:
+      include:
+        - "**/examples/**/*.go"
+    message: |
+      Examples MUST only import public packages (F-2 PRIN-5).
+      Examples demonstrate user-facing API. If examples need internal packages,
+      the public API is insufficient.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-2 (Package Structure)
+      principle: PRIN-5
+      category: architecture
+
+  # ==================================================================================
+  # F-3: ERROR HANDLING - Message Quality
+  # ==================================================================================
+
+  - id: beacon-error-message-punctuation
+    patterns:
+      - pattern-either:
+          - pattern: errors.New("$MSG.")
+          - pattern: errors.New("$MSG!")
+          - pattern: errors.New("$MSG?")
+          - pattern: fmt.Errorf("$MSG.", ...)
+          - pattern: fmt.Errorf("$MSG!", ...)
+    message: |
+      Error messages SHOULD NOT end with punctuation. F-3 Error Handling style:
+        - Be lowercase (unless proper noun)
+        - Not end with punctuation
+        - Be specific and actionable
+
+      Good: errors.New("failed to parse message")
+      Bad:  errors.New("Failed to parse message.")
+    languages: [go]
+    severity: INFO
+    metadata:
+      fspec: F-3 (Error Handling)
+      category: go-style
+
+  - id: beacon-error-log-and-return
+    patterns:
+      - pattern: |
+          log.$METHOD($MSG, ...)
+          return $ERR
+      - pattern-inside: |
+          if $COND {
+            ...
+          }
+    message: |
+      Avoid logging AND returning the same error (F-3 RULE-3).
+      This causes duplicate logs when caller also logs.
+
+      Better: Return error with context, let caller decide to log.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      fspec: F-3 (Error Handling)
+      rule: RULE-3
+      category: error-handling
+
+  # ==================================================================================
+  # F-7: RESOURCE MANAGEMENT - Cleanup Patterns (HIGH PRIORITY)
+  # ==================================================================================
+
+  - id: beacon-file-missing-defer-close
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $VAR, $ERR := os.Open($PATH)
+              if $ERR != nil {
+                ...
+              }
+          - pattern: |
+              $VAR, $ERR := os.Create($PATH)
+              if $ERR != nil {
+                ...
+              }
+          - pattern: |
+              $VAR, $ERR := os.OpenFile($PATH, $FLAG, $PERM)
+              if $ERR != nil {
+                ...
+              }
+      - pattern-not: |
+          $VAR, $ERR := os.$FUNC(...)
+          if $ERR != nil {
+            ...
+          }
+          defer $VAR.Close()
+    message: |
+      File opened without defer close. F-7 REQ-F7-5 requires:
+        file, err := os.Open("data.txt")
+        if err != nil { return err }
+        defer file.Close()
+
+      Even if error handling happens later, defer ensures cleanup.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-7 (Resource Management)
+      requirement: REQ-F7-5
+      category: resource-leak
+
+  # ==================================================================================
+  # F-11: SECURITY ARCHITECTURE - Input Validation (HIGH PRIORITY)
+  # ==================================================================================
+
+  - id: beacon-unsafe-in-parser
+    patterns:
+      - pattern: import "unsafe"
+    paths:
+      include:
+        - "**/internal/message/**/*.go"
+        - "**/internal/protocol/**/*.go"
+    message: |
+      Unsafe package FORBIDDEN for packet parsing. F-11 REQ-F11-3 security requirement:
+        - Defensive parsing with bounds checking
+        - No unsafe.Pointer for network input
+        - Prevents memory corruption attacks
+
+      This is a CRITICAL security requirement (RFC 6762 §18).
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-11 (Security Architecture)
+      requirement: REQ-F11-3
+      rfc: RFC 6762 §18
+      category: security
+
+  - id: beacon-panic-on-network-input
+    patterns:
+      - pattern: panic($MSG)
+    paths:
+      include:
+        - "**/internal/message/**/*.go"
+        - "**/internal/protocol/**/*.go"
+    message: |
+      MUST NOT panic in parsing code. F-11 REQ-F11-3 requires:
+        - Return WireFormatError for malformed packets
+        - Never panic (causes DoS)
+
+      Malicious packets WILL be sent. Library must not crash.
+      Exception: panic() is allowed in test files and init() functions.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-11 (Security Architecture)
+      requirement: REQ-F11-3
+      category: security
+
+  # ==================================================================================
+  # RFC 6762: Protocol Constants
+  # ==================================================================================
+
+  - id: beacon-hardcoded-mdns-port
+    patterns:
+      - pattern-either:
+          - pattern: '":5353"'
+          - pattern: '"5353"'
+      - pattern-not-inside: |
+          const $NAME = "5353"
+      - pattern-not-inside: |
+          const $NAME = ":5353"
+    message: |
+      Use protocol.DefaultPort constant instead of hardcoded "5353".
+      RFC 6762 defines port 5353 for mDNS.
+
+      import "github.com/joshuafuller/beacon/internal/protocol"
+      addr := net.JoinHostPort(host, strconv.Itoa(protocol.DefaultPort))
+    languages: [go]
+    severity: WARNING
+    metadata:
+      rfc: RFC 6762
+      category: constants
+
+  - id: beacon-hardcoded-multicast-address
+    patterns:
+      - pattern-either:
+          - pattern: '"224.0.0.251"'
+          - pattern: '"ff02::fb"'
+      - pattern-not-inside: |
+          const $NAME = ...
+    message: |
+      Use protocol constants instead of hardcoded multicast addresses.
+      RFC 6762 §3: 224.0.0.251 (IPv4), FF02::FB (IPv6)
+
+      Use: protocol.DefaultMulticastIPv4 or protocol.DefaultMulticastIPv6
+    languages: [go]
+    severity: WARNING
+    metadata:
+      rfc: RFC 6762 §3
+      category: constants
+
+  # ==================================================================================
+  # F-4: CONCURRENCY MODEL - Context Parameter Position
+  # ==================================================================================
+
+  - id: beacon-context-not-first-param
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func $FUNC($ARG $TYPE, ..., ctx context.Context, ...) $RET {
+                ...
+              }
+          - pattern: |
+              func ($RECV) $FUNC($ARG $TYPE, ..., ctx context.Context, ...) $RET {
+                ...
+              }
+    paths:
+      exclude:
+        - "*_test.go"
+    message: |
+      Context must be first parameter. F-4 RULE-1 requires:
+        func Operation(ctx context.Context, arg1, arg2 string) error
+
+      Not: func Operation(arg1 string, ctx context.Context) error
+
+      This rule is disabled for test files where test helper signatures may differ.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      fspec: F-4 (Concurrency Model)
+      rule: RULE-1
+      category: api-design
+
+  # ==================================================================================
+  # LIBRARY ANTI-PATTERNS - From Research (.archive/research/)
+  # Source: "Designing Premier Go MDNS Library.md"
+  # ==================================================================================
+
+  - id: beacon-close-closed-channel
+    patterns:
+      - pattern: |
+          close($CH)
+          ...
+          close($CH)
+    message: |
+      Closing the same channel twice causes panic. Research identifies this as a
+      classic concurrency bug in grandcat/zeroconf: "Error: close of closed channel"
+
+      Solutions:
+      1. Use sync.Once to ensure single close:
+         var once sync.Once
+         once.Do(func() { close(ch) })
+
+      2. Use closed flag with mutex:
+         if !closed { close(ch); closed = true }
+
+      3. Use defer close(ch) - only closes once on function exit
+
+      This is a CRITICAL bug that crashes the application.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      research: Designing Premier Go MDNS Library
+      issue: grandcat/zeroconf - "close of closed channel"
+      category: concurrency
+
+  - id: beacon-global-logger-creation
+    patterns:
+      - pattern-either:
+          - pattern: var $VAR = slog.New(...)
+          - pattern: var $VAR *slog.Logger = slog.New(...)
+    message: |
+      Library MUST NOT create its own logger at package/global level. Research mandate:
+      "The library must *not* create its own logger. It must *accept* a *slog.Logger
+      from the user via the Functional Options pattern."
+
+      Why: Library users need to control log level, format, and destination.
+
+      Correct approach:
+        type Option func(*Config)
+
+        func WithLogger(l *slog.Logger) Option {
+            return func(c *Config) { c.Logger = l }
+        }
+
+      Creating loggers inside functions for dependency injection is OK.
+      This rule only catches package-level global logger creation.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      research: Designing Premier Go MDNS Library
+      mandate: Section 5.2 - Observability
+      category: library-design
+
+  - id: beacon-global-metrics-registration
+    patterns:
+      - pattern: prometheus.MustRegister(...)
+    message: |
+      Library MUST NOT register metrics globally. Research mandate:
+      "The library must *not* register its metrics globally. This is a 'global state'
+      anti-pattern that pollutes the user's application."
+
+      Why: Global registration prevents library users from controlling their metrics.
+
+      Correct approach:
+        type Option func(*Config)
+
+        func WithMetricsRegisterer(reg prometheus.Registerer) Option {
+            return func(c *Config) { c.MetricsRegistry = reg }
+        }
+
+        // In library code:
+        config.MetricsRegistry.MustRegister(counter)  // Use injected registerer
+        // NOT: prometheus.MustRegister(counter)       // Global registration forbidden
+
+      Always use injected prometheus.Registerer, not global prometheus package.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      research: Designing Premier Go MDNS Library
+      mandate: Section 5.2 - Observability
+      category: library-design
+
+  - id: beacon-standard-log-usage
+    patterns:
+      - pattern-either:
+          - pattern: log.Print(...)
+          - pattern: log.Println(...)
+          - pattern: log.Printf(...)
+          - pattern: log.Fatal(...)
+          - pattern: log.Fatalf(...)
+          - pattern: log.Panic(...)
+          - pattern: log.Panicf(...)
+    paths:
+      exclude:
+        - "*_test.go"
+        - "**/examples/**/*.go"
+    message: |
+      Do not use standard library log package. Research mandate:
+      "Do not use the standard log.Printf(). The library must standardize on Go's
+      built-in structured logging package: log/slog."
+
+      Why: slog provides structured, machine-readable logs (JSON/key-value) essential
+      for modern log management systems.
+
+      Migration:
+        // Old:
+        log.Printf("Received packet from %s", addr)
+
+        // New:
+        logger.Debug("Received packet", "source", addr)
+
+      Accept *slog.Logger via WithLogger() option (see beacon-global-logger-creation).
+    languages: [go]
+    severity: WARNING
+    metadata:
+      research: Designing Premier Go MDNS Library
+      mandate: Section 5.2 - Observability
+      category: library-design
+
+  - id: beacon-rfc-timing-local-const
+    patterns:
+      - pattern: const $NAME = 250 * time.Millisecond
+    message: |
+      RFC-mandated timing constant (250ms) defined locally.
+
+      F-4 REQ-F4-6 & Constitution: RFC 6762 §8.1 mandates 250ms probe interval.
+      This MUST be defined in internal/protocol/ package, not as local const.
+
+      Fix: Use protocol.ProbeInterval
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-4 REQ-F4-6
+      constitution: Principle I
+
+  - id: beacon-listen-multicast-udp
+    pattern: net.ListenMulticastUDP(...)
+    message: |
+      MUST NOT use net.ListenMulticastUDP().
+
+      F-9 REQ-F9-1: Cannot set SO_REUSEPORT before bind() (Go issues #73484, #34728).
+      This breaks port sharing with Avahi/Bonjour.
+
+      Fix: Use platform-specific socket creation with SO_REUSEPORT set before bind().
+      See F-9 specification for implementation.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-9 REQ-F9-1
+
+  - id: beacon-error-wrap-percent-v
+    pattern-regex: 'fmt\.Errorf\([^)]*%v'
+    message: |
+      Error wrapped with %v instead of %w.
+
+      F-3 REQ-F3-2: Errors SHOULD be wrapped using fmt.Errorf("context: %w", err).
+
+      Using %v breaks error chain - errors.Is() and errors.As() won't work.
+
+      Fix: Change %v to %w
+    languages: [go]
+    severity: WARNING
+    metadata:
+      fspec: F-3 REQ-F3-2
+
+  - id: beacon-txt-record-value-logging
+    patterns:
+      - pattern-either:
+          - pattern: $LOGGER.$METHOD(..., $RECORD.Values, ...)
+          - pattern: $LOGGER.$METHOD(..., $RECORD.Data, ...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: '^(Debug|Info|Warn|Error|Fatal)$'
+    message: |
+      TXT record values/data logged - may contain secrets.
+
+      F-6 REQ-F6-6: TXT record values MUST NOT be logged.
+      TXT records can contain:
+      - API keys and tokens
+      - Passwords and credentials
+      - Other sensitive data
+
+      Only log TXT record KEYS, never VALUES or DATA.
+
+      Fix: Log only record.Keys
+        // Bad:
+        logger.Debug("TXT record", "values", record.Values)
+        logger.Info("TXT data", "data", record.Data)
+
+        // Good:
+        logger.Debug("TXT record", "keys", record.Keys)
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-6 REQ-F6-6
+      category: security
+      owasp: A03:2021 - Sensitive Data Exposure
+
+  - id: beacon-goroutine-no-context
+    patterns:
+      - pattern-either:
+          - pattern: |
+              go func(...) {
+                for {
+                  $X
+                  time.Sleep(...)
+                }
+              }(...)
+          - pattern: |
+              go func(...) {
+                for true {
+                  $X
+                }
+              }(...)
+      - pattern-not-inside: |
+          select {
+            case <-$CTX.Done():
+              ...
+            ...
+          }
+    message: |
+      Goroutine with infinite loop without context check - resource leak.
+
+      F-4 REQ-F4-1: Long-running operations MUST accept and respect context.Context.
+      Goroutines with infinite loops MUST check ctx.Done() to prevent leaks.
+
+      Without context check:
+      - Goroutine never exits
+      - Resources leak
+      - Cannot gracefully shutdown
+
+      Fix: Add select with ctx.Done() check
+        // Bad:
+        go func() {
+          for {
+            doWork()
+          }
+        }()
+
+        // Good:
+        go func() {
+          for {
+            select {
+            case <-ctx.Done():
+              return
+            default:
+              doWork()
+            }
+          }
+        }()
+    languages: [go]
+    severity: ERROR
+    metadata:
+      fspec: F-4 REQ-F4-1
+      category: concurrency
+      cwe: CWE-772 (Missing Release of Resource after Effective Lifetime)
+
+  # ==================================================================================
+  # GO BEST PRACTICES - Host:Port Construction (from semgrep-go)
+  # ==================================================================================
+
+  - id: beacon-sprintf-host-port
+    pattern-either:
+      - patterns:
+          - pattern-either:
+            - pattern: fmt.Sprintf("%s:%s", $NET, $XX)
+            - pattern: fmt.Sprintf("%s:%d", $NET, $XX)
+            - pattern: fmt.Sprintf("%s:%s", $XX, $NET)
+            - pattern: fmt.Sprintf("%s:%d", $XX, $NET)
+            - pattern: $NET = fmt.Sprintf("%s:%d", ..., ...)
+            - pattern: $NET = fmt.Sprintf("%s:%s", ..., ...)
+          - metavariable-regex:
+              metavariable: '$NET'
+              regex: '((?i).*(port|addr|host|listen|bind))|((?i)^ip$)|(ip[A-Z0-9].*|.*(Ip)$|.*(Ip)[A-Z0-9].*)'
+      - patterns:
+        - pattern: fmt.Sprintf($XX, $NET)
+        - metavariable-regex:
+            metavariable: '$XX'
+            regex: '"%s:[0-9]+"'
+        - metavariable-regex:
+            metavariable: '$NET'
+            regex: '((?i).*(port|addr|host|listen|bind))|((?i)^ip$)|(ip[A-Z0-9].*|.*(Ip)$|.*(Ip)[A-Z0-9].*)'
+    message: |
+      Use net.JoinHostPort() instead of fmt.Sprintf() for host:port addresses.
+
+      Why this matters:
+      1. IPv6 compatibility - net.JoinHostPort() handles IPv6 addresses correctly
+         by wrapping them in brackets: [::1]:5353
+      2. Future-proofing for M2 - Essential for dual-stack IPv4/IPv6 support
+      3. Idiomatic Go - Standard library function designed for this purpose
+
+      Fix:
+        // Bad:
+        addr := fmt.Sprintf("%s:%d", host, port)
+
+        // Good:
+        import "strconv"
+        addr := net.JoinHostPort(host, strconv.Itoa(port))
+
+      Reference: https://github.com/golang/go/issues/28308
+    languages: [go]
+    severity: WARNING
+    metadata:
+      source: dgryski/semgrep-go
+      category: best-practice
+      m2-preparation: IPv6 dual-stack support

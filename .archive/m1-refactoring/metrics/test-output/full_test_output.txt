@@ -1,0 +1,15 @@
+ok  	github.com/joshuafuller/beacon/internal/errors	0.006s	coverage: 93.3% of statements
+ok  	github.com/joshuafuller/beacon/internal/message	0.014s	coverage: 90.9% of statements
+ok  	github.com/joshuafuller/beacon/internal/network	0.021s	coverage: 70.3% of statements
+ok  	github.com/joshuafuller/beacon/internal/protocol	0.010s	coverage: 98.0% of statements
+ok  	github.com/joshuafuller/beacon/internal/transport	0.020s	coverage: 75.0% of statements
+ok  	github.com/joshuafuller/beacon/querier	0.212s	coverage: 77.6% of statements
+ok  	github.com/joshuafuller/beacon/tests/contract	4.988s	coverage: [no statements]
+ok  	github.com/joshuafuller/beacon/tests/fuzz	0.005s	coverage: [no statements]
+--- FAIL: TestQuery_RealNetwork_Timeout (1.06s)
+    query_test.go:364: Query() received 0 records in 1.000285792s
+    query_test.go:370: ✗ SC-002: Query took 1.000285792s, expected ≤1 second
+FAIL
+coverage: [no statements]
+FAIL	github.com/joshuafuller/beacon/tests/integration	29.907s
+FAIL

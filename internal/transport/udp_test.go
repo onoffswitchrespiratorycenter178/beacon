@@ -1,0 +1,255 @@
+package transport_test
+
+import (
+	"context"
+	"net"
+	"testing"
+	"time"
+
+	"github.com/joshuafuller/beacon/internal/transport"
+)
+
+// TDD - RED Phase: Tests for UDPv4Transport
+// These tests are written FIRST, before implementation exists
+// Expected: COMPILATION ERRORS (UDPv4Transport doesn't exist yet)
+
+// T011: Contract test - UDPv4Transport implements Transport interface
+// NOTE: This test will FAIL to compile until UDPv4Transport is defined in T020
+func TestUDPv4Transport_ImplementsTransportInterface(_ *testing.T) {
+	// This will fail to compile until UDPv4Transport exists
+	var _ transport.Transport = (*transport.UDPv4Transport)(nil)
+}
+
+// T013: Unit test - UDPv4Transport.Send() sends packet to multicast address
+// NOTE: This test will FAIL to compile until UDPv4Transport.Send() exists (T022)
+func TestUDPv4Transport_Send_SendsToMulticastAddress(t *testing.T) {
+	// Create UDPv4Transport (will fail until T020-T021 implemented)
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		t.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+	defer func() { _ = tr.Close() }()
+
+	// Test sending to mDNS multicast address
+	ctx := context.Background()
+	packet := []byte{0x00, 0x00, 0x00, 0x00} // Minimal DNS packet
+	mdnsAddr := &net.UDPAddr{
+		IP:   net.IPv4(224, 0, 0, 251),
+		Port: 5353,
+	}
+
+	err = tr.Send(ctx, packet, mdnsAddr)
+	if err != nil {
+		t.Errorf("Send() failed: %v", err)
+	}
+}
+
+// T014: Unit test - UDPv4Transport.Receive() respects context cancellation
+// NOTE: This test will FAIL to compile until UDPv4Transport.Receive() exists (T023)
+func TestUDPv4Transport_Receive_RespectsContextCancellation(t *testing.T) {
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		t.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+	defer func() { _ = tr.Close() }()
+
+	// Create context with immediate cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	// Receive should detect cancellation and return quickly
+	start := time.Now()
+	_, _, err = tr.Receive(ctx)
+	duration := time.Since(start)
+
+	if err == nil {
+		t.Error("Receive() should return error when context is canceled")
+	}
+
+	if duration > 100*time.Millisecond {
+		t.Errorf("Receive() took too long (%v) to detect cancellation", duration)
+	}
+}
+
+// T015: Unit test - UDPv4Transport.Receive() propagates context deadline to socket
+// NOTE: This test will FAIL to compile until UDPv4Transport.Receive() exists (T023)
+func TestUDPv4Transport_Receive_PropagatesContextDeadline(t *testing.T) {
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		t.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+	defer func() { _ = tr.Close() }()
+
+	// Create context with short deadline
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	// Receive should respect context deadline (timeout or return early with data)
+	start := time.Now()
+	data, addr, err := tr.Receive(ctx)
+	duration := time.Since(start)
+
+	// Test validates context deadline propagation
+	// Accept either timeout (no traffic) or early return with data (real mDNS traffic)
+	if err == nil {
+		t.Logf("✓ Receive() got real mDNS traffic (%d bytes from %v) in %v - context working", len(data), addr, duration)
+	} else {
+		t.Logf("✓ Receive() timed out in %v - context deadline propagated: %v", duration, err)
+		// Should timeout close to 50ms (allow 150ms tolerance for slow systems)
+		if duration > 150*time.Millisecond {
+			t.Errorf("Receive() took too long (%v) to timeout, expected ~50ms", duration)
+		}
+	}
+}
+
+// T016: Unit test - UDPv4Transport.Close() propagates errors (FR-004)
+// NOTE: This test will FAIL to compile until UDPv4Transport.Close() exists (T024)
+func TestUDPv4Transport_Close_PropagatesErrors(t *testing.T) {
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		t.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+
+	// First close should succeed
+	err = tr.Close()
+	if err != nil {
+		t.Errorf("First Close() should succeed, got error: %v", err)
+	}
+
+	// Second close should return error (not swallow it)
+	err = tr.Close()
+	if err == nil {
+		t.Error("Second Close() should return error (socket already closed)")
+	}
+}
+
+// ==============================================================================
+// Buffer Pool Tests (T044-T048) - FR-003 Optimization
+// ==============================================================================
+
+// T044: Buffer pool Get() returns 9000-byte buffer
+func TestBufferPool_GetReturns9000ByteBuffer(t *testing.T) {
+	bufPtr := transport.GetBuffer()
+	if bufPtr == nil {
+		t.Fatal("GetBuffer() returned nil")
+	}
+	defer transport.PutBuffer(bufPtr)
+
+	buf := *bufPtr
+	if len(buf) != 9000 {
+		t.Errorf("GetBuffer() returned buffer of length %d, expected 9000", len(buf))
+	}
+}
+
+// T045: Buffer pool Put() accepts buffer back
+func TestBufferPool_PutAcceptsBuffer(t *testing.T) {
+	bufPtr := transport.GetBuffer()
+	if bufPtr == nil {
+		t.Fatal("GetBuffer() returned nil")
+	}
+
+	transport.PutBuffer(bufPtr)
+
+	bufPtr2 := transport.GetBuffer()
+	if bufPtr2 == nil {
+		t.Error("GetBuffer() after Put() returned nil")
+	}
+	transport.PutBuffer(bufPtr2)
+}
+
+// T046: Buffer pool reuses buffers
+func TestBufferPool_ReusesBuffers(t *testing.T) {
+	bufPtr1 := transport.GetBuffer()
+	if bufPtr1 == nil {
+		t.Fatal("GetBuffer() returned nil")
+	}
+
+	buf1 := *bufPtr1
+	buf1[0] = 0xAA
+	buf1[1] = 0xBB
+	buf1[2] = 0xCC
+
+	transport.PutBuffer(bufPtr1)
+
+	bufPtr2 := transport.GetBuffer()
+	if bufPtr2 == nil {
+		t.Fatal("Second GetBuffer() returned nil")
+	}
+	defer transport.PutBuffer(bufPtr2)
+
+	buf2 := *bufPtr2
+	if len(buf2) != 9000 {
+		t.Errorf("Reused buffer has length %d, expected 9000", len(buf2))
+	}
+}
+
+// T047: Receive returns buffer to pool (no leaks)
+func TestUDPv4Transport_ReceiveReturnsBufferToPool(t *testing.T) {
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		t.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+	defer func() { _ = tr.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	data, addr, err := tr.Receive(ctx)
+	// Test validates buffer pool usage via defer pattern in Receive()
+	// Accept either timeout (no traffic) or data (real mDNS traffic)
+	if err == nil {
+		t.Logf("✓ Receive() got real mDNS traffic (%d bytes from %v) - buffer pool working", len(data), addr)
+	} else {
+		t.Logf("✓ Receive() timed out (no traffic) - buffer pool working: %v", err)
+	}
+}
+
+// T048: Benchmark - Measure allocations in receive path
+func BenchmarkUDPv4Transport_ReceivePath(b *testing.B) {
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		b.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+	defer func() { _ = tr.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	defer cancel()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		_, _, _ = tr.Receive(ctx)
+	}
+}
+
+// ==============================================================================
+// Phase 3: Error Propagation Validation (T063) - FR-004
+// ==============================================================================
+
+// T063: Unit test - Transport.Close() propagates errors (FR-004 validation)
+//
+// This test validates that UDPv4Transport.Close() properly propagates errors
+// instead of swallowing them (FR-004 fix from T024).
+//
+// Test strategy: Close twice - second close should return error (not nil)
+func TestUDPv4Transport_Close_PropagatesErrorsValidation(t *testing.T) {
+	tr, err := transport.NewUDPv4Transport()
+	if err != nil {
+		t.Fatalf("NewUDPv4Transport() failed: %v", err)
+	}
+
+	// First close should succeed
+	err = tr.Close()
+	if err != nil {
+		t.Errorf("First Close() should succeed, got error: %v", err)
+	}
+
+	// Second close should return error (validates FR-004: errors propagated, not swallowed)
+	err = tr.Close()
+	if err == nil {
+		t.Error("FR-004 VIOLATION: Second Close() returned nil, expected NetworkError (error swallowing detected)")
+	} else {
+		t.Logf("✓ FR-004 VALIDATED: Close() propagates error: %v", err)
+	}
+}

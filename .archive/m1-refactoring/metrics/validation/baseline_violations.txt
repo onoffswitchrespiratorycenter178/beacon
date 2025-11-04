@@ -1,0 +1,1 @@
+querier/querier.go:13:	"github.com/joshuafuller/beacon/internal/network"

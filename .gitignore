@@ -1,0 +1,187 @@
+# Beacon Project .gitignore
+# Updated: 2025-11-01
+# Governance: Aligned with Beacon Constitution v1.0.0
+
+#############
+# Go Build
+#############
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries built with `go test -c`
+*.test
+
+# Go build output
+/bin/
+/dist/
+/build/
+
+# Compiled object files
+*.o
+*.a
+
+#############
+# Go Testing
+#############
+
+# Coverage reports (per Constitution Principle III: TDD with ≥80% coverage)
+*.out
+coverage.txt
+coverage.html
+coverage.xml
+coverage.json
+.coverage/
+c.out
+
+# Coverage trend tracking (local development only)
+.coverage-trend.txt
+
+# Test cache
+*.test.cache
+
+# Benchmark results
+*.bench
+
+#############
+# Go Dependencies
+#############
+
+# Dependency directories (go.mod and go.sum SHOULD be committed)
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+#############
+# IDEs & Editors
+#############
+
+# JetBrains IDEs (GoLand, IntelliJ)
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+
+# Emacs
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+#############
+# OS Files
+#############
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+
+#############
+# Development Tools
+#############
+
+# Air (live reload)
+tmp/
+
+# Delve debugger
+debug
+__debug_bin
+
+# golangci-lint cache
+.golangci.yml.cache
+
+# Profile data
+*.prof
+*.pprof
+cpu.prof
+mem.prof
+
+#############
+# Documentation Build
+#############
+
+# Generated documentation
+/docs/generated/
+/site/
+
+#############
+# Temporary Files
+#############
+
+# General temp files
+*.tmp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Backup files
+*.bak
+*.backup
+
+#############
+# Project Specific
+#############
+
+# Local development environment configs
+.env
+.env.local
+.env.*.local
+
+# Local test data
+/testdata/local/
+
+# Ignore compiled examples (but keep source)
+/examples/*/beacon-*
+/examples/*/*/beacon-*
+
+#############
+# DO NOT IGNORE - Important Project Files
+#############
+
+# Keep all specification files (Constitution Principle II: Spec-Driven)
+!.specify/
+!.specify/**/*.md
+!.specify/**/*.txt
+
+# Keep all governance documents
+!.specify/memory/constitution.md
+!docs/BEACON_FOUNDATIONS.md
+!docs/*.md
+
+# Keep RFC reference documents (Constitution Principle I: RFC Compliant)
+!RFC Docs/
+!RFC Docs/*.txt
+
+# Keep all architecture specifications
+!.specify/specs/
+!.specify/specs/*.md
+
+# Keep all templates
+!.specify/templates/
+!.specify/templates/*.md
