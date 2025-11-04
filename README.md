@@ -70,6 +70,24 @@ for _, rr := range results {
 
 [More examples →](examples/)
 
+### Coexistence with System Services
+
+Beacon uses `SO_REUSEPORT` to peacefully coexist with system mDNS daemons:
+
+```bash
+# Both Beacon and Avahi/Bonjour can run simultaneously on port 5353
+$ sudo ss -ulnp 'sport = :5353'
+UNCONN  0.0.0.0:5353  users:(("your-app",pid=...))
+UNCONN  0.0.0.0:5353  users:(("avahi-daemon",pid=...))
+```
+
+**Tested with:**
+- ✅ Linux: Avahi
+- ✅ macOS: Bonjour (code-complete)
+- ✅ Windows: mDNS Service (code-complete)
+
+[Test it yourself →](tests/manual/avahi_coexistence.go)
+
 ---
 
 ## Why Beacon?
