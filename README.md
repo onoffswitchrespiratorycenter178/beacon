@@ -68,18 +68,6 @@ Explore how we build:
 - ✅ **Context support** - Cancellable operations
 - ✅ **Concurrent queries** - Thread-safe operation
 
-### Performance
-- Response latency: **4.8μs** (20,833x under 100ms requirement)
-- Conflict detection: **35ns** (zero allocations)
-- Buffer pooling: **99% allocation reduction** (9000 B/op → 48 B/op)
-- Throughput: **602,595 ops/sec** (response builder)
-
-### Security
-- **109,471 fuzz executions** (0 crashes)
-- **0 data races** (verified with race detector)
-- **Rate limiting** (prevents amplification attacks)
-- **Input validation** (WireFormatError for malformed packets)
-
 ## Installation
 
 ```bash
@@ -314,11 +302,10 @@ Copyright (c) 2025 Joshua Fuller
 
 ## Acknowledgments
 
-- Built to replace [hashicorp/mdns](https://github.com/hashicorp/mdns)
+- Inspired by the need for a modern, maintained alternative to [hashicorp/mdns](https://github.com/hashicorp/mdns)
 - Implements [RFC 6762 (mDNS)](https://www.rfc-editor.org/rfc/rfc6762.html) and [RFC 6763 (DNS-SD)](https://www.rfc-editor.org/rfc/rfc6763.html)
-- Uses [Spec Kit](https://github.com/github/spec-kit) framework for specification-driven development
+- Built using the [Spec Kit](https://github.com/github/spec-kit) framework for specification-driven development
 
 ## Contact
 
 - GitHub Issues: https://github.com/joshuafuller/beacon/issues
-- Email: joshuafuller@gmail.com
