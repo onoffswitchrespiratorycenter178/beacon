@@ -25,8 +25,8 @@ func TestPort(t *testing.T) {
 func TestMulticastAddrIPv4(t *testing.T) {
 	// Test validates constant matches RFC value, hardcoded string is intentional
 	want := "224.0.0.251" // nosemgrep: beacon-hardcoded-multicast-address
-	if MulticastAddrIPv4 != want {
-		t.Errorf("MulticastAddrIPv4 = %s, want %s per RFC 6762 §5", MulticastAddrIPv4, want)
+	if MulticastAddrIPv4 != want { // nosemgrep: beacon-hardcoded-multicast-address
+		t.Errorf("MulticastAddrIPv4 = %s, want %s per RFC 6762 §5", MulticastAddrIPv4, want) // nosemgrep: beacon-hardcoded-multicast-address
 	}
 }
 
@@ -40,11 +40,11 @@ func TestMulticastGroupIPv4(t *testing.T) {
 	addr := MulticastGroupIPv4()
 
 	// Test validates constants match RFC values, hardcoded strings are intentional
-	wantIP := "224.0.0.251"   // nosemgrep: beacon-hardcoded-multicast-address
+	wantIP := "224.0.0.251" // nosemgrep: beacon-hardcoded-multicast-address
 	wantPort := 5353
 
-	if addr.IP.String() != wantIP {
-		t.Errorf("MulticastGroupIPv4().IP = %s, want %s per RFC 6762 §5", addr.IP, wantIP)
+	if addr.IP.String() != wantIP { // nosemgrep: beacon-hardcoded-multicast-address
+		t.Errorf("MulticastGroupIPv4().IP = %s, want %s per RFC 6762 §5", addr.IP, wantIP) // nosemgrep: beacon-hardcoded-multicast-address
 	}
 
 	if addr.Port != wantPort {

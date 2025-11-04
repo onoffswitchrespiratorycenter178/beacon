@@ -3,8 +3,8 @@ package contract
 import (
 	"testing"
 
-	"github.com/joshuafuller/beacon/internal/records"
 	"github.com/joshuafuller/beacon/internal/protocol"
+	"github.com/joshuafuller/beacon/internal/records"
 )
 
 // TestRFC6762_RateLimiting_PerRecordOneSecondMinimum tests RFC 6762 §6.2 rate limiting.

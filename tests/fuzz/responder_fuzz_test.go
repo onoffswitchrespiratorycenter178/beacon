@@ -39,15 +39,15 @@ func FuzzServiceRegistration(f *testing.F) {
 	f.Add("My Service", "_http._tcp.local", 8080, "key1", "value1")
 
 	// Seed corpus: Edge cases
-	f.Add("", "_http._tcp.local", 8080, "", "")                                 // Empty instance name
-	f.Add("Service", "", 8080, "", "")                                          // Empty service type
-	f.Add("Service", "_http._tcp.local", 0, "", "")                             // Port = 0
-	f.Add("Service", "_http._tcp.local", 65536, "", "")                         // Port > 65535
-	f.Add("Service", "_http._tcp.local", -1, "", "")                            // Port < 0
+	f.Add("", "_http._tcp.local", 8080, "", "")                                                           // Empty instance name
+	f.Add("Service", "", 8080, "", "")                                                                    // Empty service type
+	f.Add("Service", "_http._tcp.local", 0, "", "")                                                       // Port = 0
+	f.Add("Service", "_http._tcp.local", 65536, "", "")                                                   // Port > 65535
+	f.Add("Service", "_http._tcp.local", -1, "", "")                                                      // Port < 0
 	f.Add("VeryLongNameThatExceeds63OctetsLimitPerRFC1035Section2.3.4", "_http._tcp.local", 8080, "", "") // Long name
-	f.Add("Service", "no-underscore.tcp.local", 8080, "", "")                   // Missing underscore
-	f.Add("Service", "_http._invalid.local", 8080, "", "")                      // Invalid protocol
-	f.Add("Service With Spaces", "_http._tcp.local", 8080, "", "")              // Spaces in name (valid per RFC 6763 §4.1)
+	f.Add("Service", "no-underscore.tcp.local", 8080, "", "")                                             // Missing underscore
+	f.Add("Service", "_http._invalid.local", 8080, "", "")                                                // Invalid protocol
+	f.Add("Service With Spaces", "_http._tcp.local", 8080, "", "")                                        // Spaces in name (valid per RFC 6763 §4.1)
 
 	f.Fuzz(func(t *testing.T, instanceName, serviceType string, port int, txtKey, txtValue string) {
 		// Create responder (each iteration gets its own responder for isolation)
@@ -117,9 +117,9 @@ func FuzzServiceRegistration(f *testing.F) {
 func FuzzServiceUpdate(f *testing.F) {
 	// Seed corpus: Valid updates
 	f.Add("My Service", "key1", "value1")
-	f.Add("", "", "")                           // Empty everything
+	f.Add("", "", "")                                       // Empty everything
 	f.Add("Service", "longkey", string(make([]byte, 1400))) // TXT record > 1300 bytes
-	f.Add("Service", "=", "=")                  // Special characters
+	f.Add("Service", "=", "=")                              // Special characters
 
 	f.Fuzz(func(t *testing.T, serviceID, txtKey, txtValue string) {
 		// Create responder and register a service
@@ -179,8 +179,8 @@ func FuzzServiceUpdate(f *testing.F) {
 func FuzzServiceUnregister(f *testing.F) {
 	// Seed corpus
 	f.Add("My Service")
-	f.Add("")                      // Empty
-	f.Add("NonExistentService")    // Not registered
+	f.Add("")                         // Empty
+	f.Add("NonExistentService")       // Not registered
 	f.Add(string(make([]byte, 1000))) // Very long
 
 	f.Fuzz(func(t *testing.T, serviceID string) {

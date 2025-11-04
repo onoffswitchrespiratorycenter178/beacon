@@ -181,7 +181,8 @@ func ParseName(msg []byte, offset int) (name string, newOffset int, err error) {
 // portion is a SINGLE label that can contain arbitrary UTF-8 characters including spaces.
 //
 // Example: "My Printer._http._tcp.local" is encoded as:
-//   [10]My Printer[5]_http[4]_tcp[5]local[0]
+//
+//	[10]My Printer[5]_http[4]_tcp[5]local[0]
 //
 // Parameters:
 //   - instanceName: User-friendly instance name (can contain spaces, UTF-8)
@@ -208,7 +209,7 @@ func EncodeServiceInstanceName(instanceName, serviceType string) ([]byte, error)
 	// Encode instance name as a single label (allow spaces and UTF-8)
 	encoded := make([]byte, 0, 256)
 	encoded = append(encoded, byte(len(instanceName))) // Length prefix
-	encoded = append(encoded, []byte(instanceName)...)  // Raw bytes (UTF-8)
+	encoded = append(encoded, []byte(instanceName)...) // Raw bytes (UTF-8)
 
 	// Encode service type normally (strict DNS validation)
 	serviceTypeEncoded, err := EncodeName(serviceType)

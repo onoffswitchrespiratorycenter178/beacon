@@ -17,6 +17,8 @@
 // - No "address already in use" errors
 // - Services from both Beacon and system mDNS daemon are visible
 
+// Package main provides a manual test for Avahi/Bonjour coexistence.
+// This is a standalone test program to verify SO_REUSEPORT functionality.
 package main
 
 // nosemgrep: beacon-external-dependencies

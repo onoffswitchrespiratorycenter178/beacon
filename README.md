@@ -10,7 +10,7 @@
 
 Beacon is a lightweight, high-performance mDNS (Multicast DNS) library for Go, implementing [RFC 6762](https://www.rfc-editor.org/rfc/rfc6762.html) for service discovery on local networks.
 
-**Perfect for**: IoT devices, microservices, local network service discovery, replacing unmaintained alternatives like hashicorp/mdns.
+**Perfect for**: IoT devices, microservices, local network service discovery, replacing unmaintained alternatives.
 
 ---
 
