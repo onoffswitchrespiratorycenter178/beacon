@@ -30,13 +30,13 @@ func TestConflictResolution_TwoServicesRename(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create responder 1: %v", err)
 	}
-	defer r1.Close()
+	defer func() { _ = r1.Close() }()
 
 	r2, err := responder.New(ctx)
 	if err != nil {
 		t.Fatalf("Failed to create responder 2: %v", err)
 	}
-	defer r2.Close()
+	defer func() { _ = r2.Close() }()
 
 	// Register first service
 	service1 := &responder.Service{
@@ -97,7 +97,7 @@ func TestConflictResolution_MaxRenameAttempts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create responder: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	// Inject conflict to force rename loop
 	r.InjectConflictDuringProbing(true)

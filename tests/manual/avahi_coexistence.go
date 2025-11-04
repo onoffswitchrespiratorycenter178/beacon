@@ -54,7 +54,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ FAILED: Could not create responder: %v", err) // nosemgrep: beacon-standard-log-usage
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }() // Ignore error in defer for manual test
 	fmt.Println("   ✅ SUCCESS: Responder created (SO_REUSEPORT is working!)")
 	fmt.Println()
 

@@ -1,10 +1,11 @@
+//go:build unix
+
 package integration
 
 import (
 	"context"
 	"net"
 	"os"
-	"runtime"
 	"syscall"
 	"testing"
 	"time"
@@ -25,11 +26,6 @@ func TestAvahiCoexistence(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	// Windows has different SO_REUSEADDR semantics, test is still valid
-	if runtime.GOOS == "windows" {
-		t.Log("Windows: Testing SO_REUSEADDR port sharing (different semantics than POSIX SO_REUSEPORT)")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -38,18 +34,13 @@ func TestAvahiCoexistence(t *testing.T) {
 		Control: func(_, _ string, c syscall.RawConn) error {
 			var sockoptErr error
 			err := c.Control(func(fd uintptr) {
-				// Set SO_REUSEADDR (and SO_REUSEPORT on Unix)
-				switch runtime.GOOS {
-				case "linux", "darwin":
-					sockoptErr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-					if sockoptErr != nil {
-						return
-					}
-					// SO_REUSEPORT = 15 on Linux/BSD
-					sockoptErr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, 0xf, 1)
-				case "windows":
-					sockoptErr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+				// Set SO_REUSEADDR and SO_REUSEPORT (Unix only - per build tag)
+				sockoptErr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+				if sockoptErr != nil {
+					return
 				}
+				// SO_REUSEPORT = 15 on Linux/BSD
+				sockoptErr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, 0xf, 1)
 			})
 			if err != nil {
 				return err

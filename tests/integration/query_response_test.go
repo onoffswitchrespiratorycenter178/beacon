@@ -33,7 +33,7 @@ func TestQueryResponse_ResponseLatency(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create responder: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	// Register service
 	service := &responder.Service{
@@ -83,7 +83,7 @@ func TestQueryResponse_PTRQueryWithAdditionalRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create responder: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	service := &responder.Service{
 		InstanceName: "TestService",
@@ -131,7 +131,7 @@ func TestQueryResponse_QUBitHandling(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create responder: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	service := &responder.Service{
 		InstanceName: "TestService",
