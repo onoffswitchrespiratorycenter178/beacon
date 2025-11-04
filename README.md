@@ -27,7 +27,7 @@ Beacon isn't just another mDNS library—it's built on a foundation of engineeri
 
 **RFC Compliance First** - Every feature is validated against [RFC 6762](https://www.rfc-editor.org/rfc/rfc6762.html) and [RFC 6763](https://www.rfc-editor.org/rfc/rfc6763.html). We don't deviate from MUST requirements. Our [RFC Compliance Matrix](docs/RFC_COMPLIANCE_MATRIX.md) tracks every section, showing exactly what's implemented (72.2%) and what's planned.
 
-**Specification-Driven Development** - No code without a spec. Every feature goes through detailed planning using the [Specify framework](https://github.com/anthropics/specify) before implementation begins. See our [specs/ directory](specs/) and [Constitution](.specify/memory/constitution.md) to understand our process.
+**Specification-Driven Development** - No code without a spec. Every feature goes through detailed planning using the [Spec Kit framework](https://github.com/github/spec-kit) before implementation begins. See our [specs/ directory](specs/) and [Constitution](.specify/memory/constitution.md) to understand our process.
 
 **Test-Driven Development** - Tests are written first, validated to fail, then implementation makes them pass (RED → GREEN → REFACTOR). This ensures testable design and prevents regressions. Every commit is tested with `-race` detector.
 
@@ -221,7 +221,7 @@ See [RFC Compliance Matrix](docs/RFC_COMPLIANCE_MATRIX.md) for detailed status.
 
 ## Architecture
 
-Beacon follows a **specification-driven development** methodology using the [Specify](https://github.com/anthropics/specify) framework. Key principles:
+Beacon follows a **specification-driven development** methodology using the [Spec Kit](https://github.com/github/spec-kit) framework. Key principles:
 
 - **Clean Architecture** - Strict layer boundaries (F-2 specification)
 - **Zero Dependencies** - Standard library only (Constitution principle)

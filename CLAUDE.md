@@ -495,7 +495,7 @@ Always add a comment explaining WHY suppression is necessary.
 
 ## Specification-Driven Development (Spec Kit Framework)
 
-**This is a Spec Kit project** - all development follows the [Specify](https://github.com/anthropics/specify) framework's specification-driven methodology.
+**This is a Spec Kit project** - all development follows the [Spec Kit](https://github.com/github/spec-kit) framework's specification-driven methodology.
 
 ### Core Philosophy
 
