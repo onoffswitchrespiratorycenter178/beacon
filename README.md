@@ -7,6 +7,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/joshuafuller/beacon.svg)](https://pkg.go.dev/github.com/joshuafuller/beacon)
 [![Go Report Card](https://goreportcard.com/badge/github.com/joshuafuller/beacon)](https://goreportcard.com/report/github.com/joshuafuller/beacon)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/joshuafuller/beacon)
 
 Beacon is a lightweight, high-performance mDNS (Multicast DNS) library for Go, implementing [RFC 6762](https://www.rfc-editor.org/rfc/rfc6762.html) for service discovery on local networks.
 
