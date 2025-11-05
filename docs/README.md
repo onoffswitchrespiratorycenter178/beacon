@@ -1,6 +1,6 @@
 # Beacon Documentation
 
-This directory contains **active** project documentation. For historical/archived documents, see [.archive/](./../.archive/).
+This directory contains **active** project documentation. Historical artifacts are retained locally and will be published once an archive location is established.
 
 ---
 
@@ -12,7 +12,7 @@ This directory contains **active** project documentation. For historical/archive
 **Compliance & Tracking**:
 - [RFC Compliance Matrix](./RFC_COMPLIANCE_MATRIX.md) - Section-by-section RFC 6762 implementation (52.8% complete)
 - [Functional Requirements Matrix](./FUNCTIONAL_REQUIREMENTS_MATRIX.md) - All 61 Foundation FRs with traceability
-- [Foundation Completion Report](./FOUNDATION_COMPLETE.md) - M1→M1-R→M1.1 narrative
+- Foundation completion narrative (publication pending)
 
 **Architecture & Security**:
 - [Architectural Pitfalls & Mitigations](./ARCHITECTURAL_PITFALLS_AND_MITIGATIONS.md) - Security and resilience requirements
@@ -76,23 +76,8 @@ This directory contains **active** project documentation. For historical/archive
 
 ---
 
-### Foundation Completion Report
-**Purpose**: Narrative explaining M1→M1-R→M1.1 progression
-
-**Use when**:
-- Understanding why we had 3 Foundation milestones
-- Learning what's implemented and why
-- Reviewing quality metrics
-- Planning M2 (responder) work
-
-**Key Sections**:
-- Executive Summary
-- Why Three Milestones? (Basic → Refactored → Production-Ready)
-- What's Implemented (5 functional areas)
-- Quality Metrics (210+ tasks, 80% coverage, zero regressions)
-- What's Next (M2-M6 roadmap)
-
-**Last Updated**: 2025-11-02 (Foundation complete, 602 lines)
+### Foundation Completion Narrative (in progress)
+The comprehensive write-up covering the M1→M1-R→M1.1 progression is being prepared. Until it is published, reference the compliance dashboard, milestone specs, and refactoring plan completion summary for historical context.
 
 ---
 
@@ -131,12 +116,8 @@ This directory contains **active** project documentation. For historical/archive
 - ADRs (permanent architectural record)
 - Reference documents (pitfalls, security)
 
-**Archived** ([.archive/](./../.archive/)):
-- Historical planning artifacts
-- Superseded validation matrices
-- Early strategic analysis
-- Research documents
-- Milestone-specific reports (M1 analysis, M1-Refactoring metrics)
+- **Archived** (to be published):
+  Historical planning artifacts, superseded validation matrices, strategic analysis, research documents, and milestone-specific reports will be released once an archival location is finalized.
 
 **Retention Policy**:
 - Milestone completion reports: Keep active for current milestone + 1, then archive
@@ -157,11 +138,11 @@ This directory contains **active** project documentation. For historical/archive
 - [specs/](../specs/) - Feature specifications (M1, M1-R, M1.1, etc.)
 
 **Protocol References**:
-- [RFC 6762](../RFC%20Docs/rfc6762.txt) - Multicast DNS (PRIMARY AUTHORITY)
-- [RFC 6763](../RFC%20Docs/rfc6763.txt) - DNS-SD
+- [RFC 6762](../RFC%20Docs/RFC-6762-Multicast-DNS.txt) - Multicast DNS (PRIMARY AUTHORITY)
+- [RFC 6763](../RFC%20Docs/RFC-6763-DNS-SD.txt) - DNS-SD
 
 **Archived Documentation**:
-- [.archive/](./../.archive/) - Historical documents (see .archive/README.md)
+  Historical documents will be linked once the archive directory is published.
 
 ---
 
