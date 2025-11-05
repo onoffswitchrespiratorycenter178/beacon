@@ -116,7 +116,7 @@ beacon/
 │       ├── CODE_REVIEW.md     # Code quality review (Grade: A)
 │       └── PERFORMANCE_ANALYSIS.md # Performance profiling (Grade: A+)
 │
-├── RFC Docs/                   # ⭐ Protocol Specifications (SOURCE OF TRUTH)
+├── RFC%20Docs/                   # ⭐ Protocol Specifications (SOURCE OF TRUTH)
 │   ├── rfc6762.txt            # mDNS specification
 │   └── rfc1035.txt            # DNS message format
 │
@@ -548,7 +548,7 @@ Development follows a strict **Spec → Plan → Tasks → TDD → Validate** cy
 - **`specs/[milestone]/tasks.md`** - Executable tasks
 - Example: `specs/003-m1-refactoring/` (97 tasks, all complete)
 
-#### `RFC Docs/` - Protocol Specifications (CRITICAL)
+#### `RFC%20Docs/` - Protocol Specifications (CRITICAL)
 - **RFC 6762**: mDNS specification - **ALL behavior must comply**
 - **RFC 1035**: DNS message format
 - RFCs are the source of truth for protocol behavior
