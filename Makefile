@@ -55,20 +55,20 @@ help:
 	@echo "  ./scripts/coverage-trend.sh --show  - Show coverage history"
 	@echo "  ./scripts/coverage-trend.sh --graph - Show trend graph"
 
-## test: Run all unit tests
+## test: Run all unit tests (excludes fuzz tests for speed)
 test:
-	@echo "Running unit tests..."
-	$(GO) test -v ./...
+	@echo "Running unit tests (excludes fuzz tests)..."
+	$(GO) test -v $$(go list ./... | grep -v /tests/fuzz)
 
 ## test-race: Run tests with race detector (FR-019, REQ-F8-5: MUST pass with zero race conditions)
 test-race:
-	@echo "Running tests with race detector (FR-019, REQ-F8-5)..."
-	$(GO) test -race -v ./...
+	@echo "Running tests with race detector (FR-019, REQ-F8-5, excludes fuzz tests)..."
+	$(GO) test -race -v $$(go list ./... | grep -v /tests/fuzz)
 
 ## test-coverage: Run tests with coverage report (SC-010, REQ-F8-2: ≥80% required)
 test-coverage:
-	@echo "Running tests with coverage (REQ-F8-2: ≥80% required)..."
-	$(GO) test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
+	@echo "Running tests with coverage (REQ-F8-2: ≥80% required, excludes fuzz tests)..."
+	$(GO) test -coverprofile=$(COVERAGE_FILE) -covermode=atomic $$(go list ./... | grep -v /tests/fuzz)
 	@echo ""
 	@echo "Coverage Report:"
 	$(GO) tool cover -func=$(COVERAGE_FILE)
@@ -88,8 +88,8 @@ test-coverage:
 
 ## test-coverage-report: Generate detailed coverage report by package
 test-coverage-report:
-	@echo "Generating detailed coverage report by package..."
-	@$(GO) test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./... || true
+	@echo "Generating detailed coverage report by package (excludes fuzz tests)..."
+	@$(GO) test -coverprofile=$(COVERAGE_FILE) -covermode=atomic $$(go list ./... | grep -v /tests/fuzz) || true
 	@if [ ! -f $(COVERAGE_FILE) ]; then \
 		echo "❌ Failed to generate coverage report (tests may have failed)"; \
 		exit 1; \

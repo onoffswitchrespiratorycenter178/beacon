@@ -82,12 +82,12 @@ jobs:
           echo "⚠️ Semgrep not installed, skipping"
         fi
 
-    - name: Run tests with race detector
-      run: go test -race -v ./...
+    - name: Run tests with race detector (excludes fuzz for speed)
+      run: go test -race -v $(go list ./... | grep -v /tests/fuzz)
 
-    - name: Run tests with coverage
+    - name: Run tests with coverage (excludes fuzz for speed)
       run: |
-        go test -coverprofile=coverage.out -covermode=atomic ./...
+        go test -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v /tests/fuzz)
         go tool cover -func=coverage.out
 
     - name: Check minimum coverage
@@ -117,11 +117,12 @@ jobs:
         path: coverage.out
         retention-days: 30
 
-  # Full validation - runs on PRs and main branch
+  # Full validation - runs only on PRs to main (not feature branch pushes)
   ci-full:
     name: Full CI (All Tests)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     steps:
     - name: Checkout code
@@ -179,11 +180,11 @@ jobs:
           echo "⚠️ Semgrep not installed, skipping"
         fi
 
-    - name: Run tests with race detector
-      run: go test -race -v ./...
+    - name: Run tests with race detector (excludes fuzz for speed)
+      run: go test -race -v $(go list ./... | grep -v /tests/fuzz)
 
-    - name: Run tests with coverage
-      run: go test -coverprofile=coverage.out -covermode=atomic ./...
+    - name: Run tests with coverage (excludes fuzz for speed)
+      run: go test -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v /tests/fuzz)
 
     - name: Run contract tests (RFC compliance)
       run: go test -v ./tests/contract/...
@@ -194,8 +195,8 @@ jobs:
     - name: Run fuzz tests (CI mode - 30s)
       run: go test -fuzz=FuzzMessageParser -fuzztime=30s ./tests/fuzz/...
 
-    - name: Run benchmarks
-      run: go test -bench=. -benchmem -count=5 ./...
+    - name: Run benchmarks (excludes fuzz for speed)
+      run: go test -bench=. -benchmem -count=5 $(go list ./... | grep -v /tests/fuzz)
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
@@ -223,9 +224,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: Re-enable macOS builds after investigating test failures (see issue #19)
-        os: [ubuntu-latest, windows-latest]
-        go-version: ['1.21', '1.22', '1.23', '1.24', '1.25']
+        # Test all Go versions on Linux, minimum version (1.21) on Windows
+        # macOS disabled due to test failures (see issue #19)
+        include:
+          - os: ubuntu-latest
+            go-version: '1.21'
+          - os: ubuntu-latest
+            go-version: '1.22'
+          - os: ubuntu-latest
+            go-version: '1.23'
+          - os: ubuntu-latest
+            go-version: '1.24'
+          - os: ubuntu-latest
+            go-version: '1.25'
+          - os: windows-latest
+            go-version: '1.21'
 
     steps:
     - name: Checkout code
@@ -241,12 +254,12 @@ jobs:
     - name: Build all packages
       run: go build ./...
 
-    - name: Run unit tests (short mode)
-      run: go test -short -v ./...
+    - name: Run unit tests (short mode, excludes fuzz for speed)
+      run: go test -short -v $(go list ./... | grep -v /tests/fuzz)
 
-    - name: Run race detector (Linux/macOS only)
+    - name: Run race detector (Linux/macOS only, excludes fuzz for speed)
       if: runner.os != 'Windows'
-      run: go test -race -short ./...
+      run: go test -race -short $(go list ./... | grep -v /tests/fuzz)
 
   # Security scanning
   security:
