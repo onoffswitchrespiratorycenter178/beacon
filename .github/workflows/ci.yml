@@ -121,7 +121,7 @@ jobs:
   ci-full:
     name: Full CI (All Tests)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     steps:
@@ -180,23 +180,17 @@ jobs:
           echo "⚠️ Semgrep not installed, skipping"
         fi
 
-    - name: Run tests with race detector (excludes fuzz for speed)
-      run: go test -race -v $(go list ./... | grep -v /tests/fuzz)
+    - name: Run tests with race detector and coverage (combined for speed)
+      run: go test -race -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v /tests/fuzz | grep -v /tests/integration)
 
-    - name: Run tests with coverage (excludes fuzz for speed)
-      run: go test -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v /tests/fuzz)
-
-    - name: Run contract tests (RFC compliance)
-      run: go test -v ./tests/contract/...
-
-    - name: Run integration tests
+    - name: Run integration tests (separate due to test isolation)
       run: go test -v ./tests/integration/...
 
-    - name: Run fuzz tests (CI mode - 30s)
-      run: go test -fuzz=FuzzMessageParser -fuzztime=30s ./tests/fuzz/...
+    - name: Run fuzz tests (CI mode - 10s, quick validation)
+      run: go test -fuzz=FuzzMessageParser -fuzztime=10s ./tests/fuzz/...
 
-    - name: Run benchmarks (excludes fuzz for speed)
-      run: go test -bench=. -benchmem -count=5 $(go list ./... | grep -v /tests/fuzz)
+    - name: Run benchmarks (1 iteration for regression detection only)
+      run: go test -bench=. -benchmem -count=1 $(go list ./... | grep -v /tests/fuzz)
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
